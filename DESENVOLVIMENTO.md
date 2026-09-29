@@ -12,9 +12,10 @@
   basta rodar a API. Em produção, as migrations seriam aplicadas no deploy.
 - **`CriadoEm` como `DateTimeOffset`.** Com `DateTime`, a data sairia no JSON sem fuso e o
   navegador mostraria a hora errada. Assim ela chega em UTC explícito.
-- **Controller acessa o DbContext direto, sem camada de serviço.** São três operações simples
-  sem regra repetida; os testes de integração cobrem de ponta a ponta, e um serviço só
-  acrescentaria classes. Pode entrar quando a extração do PDF precisar compartilhar regras.
+- **Controller acessa o DbContext direto, sem camada de serviço.** São três operações simples,
+  sem regra repetida, cobertas por testes de integração de ponta a ponta. A única regra que o
+  cadastro e a extração do PDF compartilham, a do telefone, ficou na classe estática
+  `TelefoneBrasileiro`, sem precisar de serviço no DI.
 - **DTOs separados da entidade.** Entrada sem `Id`/`CriadoEm`; na saída, lista resumida
   (sem telefone e resumo) e detalhe completo, para o contrato da API não ser a entidade do EF.
 - **Validação com DataAnnotations e mensagens em português.** Os tamanhos máximos vêm de
@@ -82,6 +83,49 @@
 - **Um teste de integração com Kestrel real** (`UseKestrel`, novo no .NET 10), porque o
   TestServer não tem o limite de corpo do Kestrel nem descarta o corpo depois da resposta.
 
+### Frontend
+
+- **Proxy do Vite em vez de CORS.** Em desenvolvimento, o Vite repassa `/api` para a API.
+  O backend não muda, front e API ficam na mesma origem (sem preflight), e o código usa só
+  caminhos relativos (`/api/...`).
+- **Formulário com `useState` e funções de validação puras** (`validacao.ts`), sem biblioteca.
+  São cinco campos; as regras são testadas sem React; os erros do front e os que vêm do backend
+  ficam no mesmo objeto de erros.
+- **React Router 8 no modo declarativo (`BrowserRouter`).** A URL é real: os detalhes abrem por
+  link, e o voltar do navegador e o F5 funcionam.
+- **CSS próprio num único arquivo**, sem dependência: a interface é simples.
+- **Regras iguais às do backend.** As regex de e-mail e telefone estão copiadas em
+  `validacao.ts`. O `casos-de-validacao.json`, lido pelo xUnit e pelo Vitest, faz os testes de
+  um lado falharem se o outro mudar. No front, o telefone só é validado; a normalização fica no
+  backend. Por isso a regex do front não usa grupos nomeados.
+- **Mensagens de validação idênticas às do backend**, para o texto ser o mesmo tanto quando o
+  erro é pego no front quanto quando vem da API.
+- **O arquivo é validado no front pelo tamanho e pela assinatura `%PDF-`**, a mesma regra do
+  backend: um PDF sem extensão passa e um `.txt` renomeado não. O `accept` do input só filtra o
+  seletor de arquivos.
+- **A importação começa assim que o arquivo é escolhido.** Os campos encontrados sobrescrevem
+  os do formulário, e os não encontrados ficam como estão; a mensagem diz o que foi e o que não
+  foi encontrado.
+- **A falha na leitura do PDF nunca bloqueia o formulário.** Só o input de arquivo fica
+  desabilitado durante a leitura. Em caso de erro, ele é limpo para permitir tentar o mesmo
+  arquivo de novo.
+- **"API fora do ar" = `fetch` rejeitado, ou 5xx sem `application/problem+json`.** O proxy do
+  Vite responde 502 em texto quando a API está parada. Um 500 da própria API (em ProblemDetails)
+  mostra "Ocorreu um erro no servidor".
+- **Erros do backend no campo certo.** O 400 é mapeado para os campos (as chaves vêm em
+  PascalCase, como `NomeCompleto`, e a comparação ignora maiúsculas); o 409 aparece no campo
+  e-mail.
+- **Formulário com `noValidate`**, para aparecerem as nossas mensagens, e não os balões do
+  navegador.
+- **Depois de salvar, a tela vai para os detalhes, com a mensagem passada no state da
+  navegação.** O state é apagado do histórico (`navigate` com `replace`) assim que a mensagem é
+  exibida, para ela não voltar no F5. Funciona como o flash da sessão no Laravel.
+- **Requisições canceladas ao sair da tela** (`AbortController`). Isso evita resposta atrasada
+  numa tela que já saiu e a requisição dupla do StrictMode em desenvolvimento.
+- **Testes com `fetch` simulado (`vi.fn`), sem MSW.** Os testes de tela renderizam a `App` com
+  `MemoryRouter` e encontram os elementos pelo papel e pelo rótulo acessível (`aria-invalid`,
+  `aria-describedby`, `role="alert"` e `role="status"`).
+
 ## Uso de IA
 
 ## Verificação
@@ -128,5 +172,19 @@
 - **A leitura do PDF não tem tempo limite:** um PDF malicioso pode consumir CPU e memória.
 - **"Não gravar em disco"** é garantido pela configuração e pela checagem em `ArquivoEnviado`,
   mas não tem teste automatizado: o `.tmp` some no fim da requisição.
+
+### Frontend
+
+- **O proxy só existe no `npm run dev` e no `npm run preview`.** Para publicar o build em outro
+  servidor, ele precisa repassar `/api` para a API, ou o backend precisa liberar CORS.
+- **As regex do front são cópias das do backend.** O arquivo de casos só garante que as duas
+  concordam nos casos listados nele.
+- **Os tamanhos máximos dos campos só são conferidos no backend:** o erro aparece no campo
+  depois do envio.
+- **Não há** máscara de telefone, paginação, busca, edição nem exclusão de candidatos.
+- **A lista e os detalhes não têm testes próprios**, além do teste da mensagem de sucesso nos
+  detalhes. Não há testes ponta a ponta num navegador de verdade: os testes do front usam jsdom
+  e `fetch` simulado.
+- **A data de cadastro aparece no fuso do navegador.**
 
 ## Dificuldades e melhorias

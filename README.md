@@ -1,6 +1,7 @@
 # Cadastro de currículos — Desafio CIEE/PR
 
-Cadastro de candidatos com importação opcional de currículo em PDF.
+Cadastro de candidatos com importação opcional de currículo em PDF: API em ASP.NET Core com
+SQL Server (`backend/`) e interface em React (`frontend/`).
 O relato do desenvolvimento está em [DESENVOLVIMENTO.md](DESENVOLVIMENTO.md).
 
 ## Tecnologias e versões
@@ -16,13 +17,20 @@ O relato do desenvolvimento está em [DESENVOLVIMENTO.md](DESENVOLVIMENTO.md).
 | Microsoft.AspNetCore.Mvc.Testing | 10.0.12 |
 | Testcontainers.MsSql | 4.15.0 |
 | Docker + Docker Compose | qualquer versão recente com `docker compose` |
-
-O frontend (React + TypeScript + Vite) ainda não foi criado.
+| Node.js / npm | 20.19+ ou 22.12+ (testado com Node 24.18.0 e npm 11.16.0) |
+| React / React DOM | 19.3.0 |
+| TypeScript | 6.0.3 |
+| Vite (+ @vitejs/plugin-react) | 8.3.1 (6.1.1) |
+| React Router | 8.4.0 |
+| Vitest / jsdom | 5.0.2 / 30.1.1 |
+| Testing Library (react, user-event, jest-dom) | 16.3.3, 14.6.7, 7.0.1 |
+| oxlint | 1.86.0 |
 
 ## Pré-requisitos
 
 - .NET SDK 10
 - Docker com Docker Compose (também é usado pelos testes)
+- Node.js 20.19+ ou 22.12+, com npm (para o frontend)
 
 ## 1. Subir o SQL Server
 
@@ -64,7 +72,7 @@ dotnet tool restore
 dotnet ef database update --project backend/src/Candidatos.Api
 ```
 
-## 4. Executar
+## 4. Executar a API
 
 ```bash
 dotnet run --project backend/src/Candidatos.Api
@@ -111,7 +119,29 @@ A pasta `exemplos/` tem currículos fictícios para testar a importação (tamb�
 | `curriculo-protegido.pdf` | 422, protegido por senha (a senha é `ciee2026`) |
 | `curriculo-digitalizado.pdf` | 422, sem texto selecionável (é o mesmo currículo convertido em imagem) |
 
-## 5. Testar
+## 5. Executar o frontend
+
+Com a API rodando (passo 4), em outro terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Abra http://localhost:5173. Telas: lista de candidatos (`/candidatos`), cadastro com importação
+opcional de PDF (`/candidatos/novo`) e detalhes (`/candidatos/{id}`).
+
+Em desenvolvimento, o Vite repassa as chamadas a `/api` para `http://localhost:5290` (proxy em
+`frontend/vite.config.ts`), então a API não precisa de CORS. Se a API estiver parada, a interface
+mostra "Não foi possível conectar à API".
+
+`npm run build` gera a versão de produção em `frontend/dist`, e `npm run preview` a serve com o
+mesmo proxy. Para publicar em outro servidor, ele precisa repassar `/api` para a API.
+
+## 6. Testar
+
+### Backend
 
 O Docker precisa estar rodando. Os testes de integração sobem um SQL Server próprio em
 container (Testcontainers) e aplicam as migrations nele; não usam o banco do `docker compose`
@@ -122,3 +152,20 @@ não dependem de PDF nem de banco.
 ```bash
 dotnet test backend/Candidatos.slnx
 ```
+
+### Frontend
+
+Não precisa da API nem do banco: as chamadas ao `fetch` são simuladas nos testes.
+
+```bash
+cd frontend
+npm test          # Vitest + Testing Library
+npm run lint      # oxlint
+npm run build     # inclui a checagem de tipos do TypeScript
+```
+
+### Regras compartilhadas
+
+`casos-de-validacao.json`, na raiz, lista e-mails e telefones válidos e inválidos. Os testes do
+backend (xUnit) e do frontend (Vitest) leem o mesmo arquivo. Se a regra mudar só de um lado, os
+testes do outro falham.
