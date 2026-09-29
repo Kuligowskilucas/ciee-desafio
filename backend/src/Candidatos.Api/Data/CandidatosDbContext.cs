@@ -11,11 +11,11 @@ public class CandidatosDbContext(DbContextOptions<CandidatosDbContext> options) 
     {
         var candidato = modelBuilder.Entity<Candidato>();
 
-        candidato.Property(c => c.NomeCompleto).HasMaxLength(150);
-        candidato.Property(c => c.Email).HasMaxLength(254);
-        candidato.Property(c => c.Telefone).HasMaxLength(20);
-        candidato.Property(c => c.AreaInteresse).HasMaxLength(100);
-        candidato.Property(c => c.ResumoProfissional).HasMaxLength(2000);
+        candidato.Property(c => c.NomeCompleto).HasMaxLength(Candidato.NomeCompletoTamanhoMaximo);
+        candidato.Property(c => c.Email).HasMaxLength(Candidato.EmailTamanhoMaximo);
+        candidato.Property(c => c.Telefone).HasMaxLength(Candidato.TelefoneTamanhoMaximo);
+        candidato.Property(c => c.AreaInteresse).HasMaxLength(Candidato.AreaInteresseTamanhoMaximo);
+        candidato.Property(c => c.ResumoProfissional).HasMaxLength(Candidato.ResumoProfissionalTamanhoMaximo);
         candidato.Property(c => c.CriadoEm).HasDefaultValueSql("SYSUTCDATETIME()");
 
         candidato.HasIndex(c => c.Email).IsUnique();

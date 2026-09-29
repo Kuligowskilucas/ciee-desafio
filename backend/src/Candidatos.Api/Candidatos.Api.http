@@ -1,1 +1,34 @@
 @Candidatos.Api_HostAddress = http://localhost:5290
+
+POST {{Candidatos.Api_HostAddress}}/api/candidatos
+Content-Type: application/json
+
+{
+  "nomeCompleto": "Maria da Silva",
+  "email": "maria.silva@exemplo.com",
+  "telefone": "(41) 99999-8888",
+  "areaInteresse": "Desenvolvimento",
+  "resumoProfissional": "Estudante de Análise e Desenvolvimento de Sistemas."
+}
+
+###
+
+POST {{Candidatos.Api_HostAddress}}/api/candidatos
+Content-Type: application/json
+
+{
+  "nomeCompleto": "",
+  "email": "email-invalido"
+}
+
+###
+
+GET {{Candidatos.Api_HostAddress}}/api/candidatos
+
+###
+
+GET {{Candidatos.Api_HostAddress}}/api/candidatos/1
+
+###
+
+GET {{Candidatos.Api_HostAddress}}/api/candidatos/999999

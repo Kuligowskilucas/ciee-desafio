@@ -44,10 +44,17 @@ DESENVOLVIMENTO.md          relato do desenvolvimento (decisões técnicas e lim
 backend/
   Candidatos.slnx           solution
   src/Candidatos.Api/       Web API
-    Entities/               entidades do domínio (Candidato)
+    Program.cs              DI, ProblemDetails (títulos em português), exception handler, checagem da connection string
+    Controllers/            CandidatosController (POST, GET lista, GET por id)
+    Dtos/                   CriarCandidatoDto (validação + normalização), CandidatoDto, CandidatoResumoDto
+    Entities/               entidades do domínio (Candidato, com constantes de tamanho máximo)
     Data/                   CandidatosDbContext (tamanhos, índices, defaults via Fluent API)
     Migrations/             migrations do EF Core (geradas, não editar à mão)
-  tests/Candidatos.Api.Tests/  testes xUnit (referencia a API)
+    Candidatos.Api.http     exemplos de requisições
+  tests/Candidatos.Api.Tests/  testes xUnit de integração
+    ApiFixture.cs           SQL Server via Testcontainers + WebApplicationFactory (collection fixture)
+    CandidatosEndpointsTests.cs  cadastro, validação, 409, listagem, detalhe, 404
+    ErroNaoTratadoTests.cs  500 em ProblemDetails sem stack trace
 ```
 
 ## Comandos
@@ -63,11 +70,12 @@ dotnet user-secrets set "ConnectionStrings:Candidatos" \
   --project backend/src/Candidatos.Api
 
 dotnet build backend/Candidatos.slnx
-dotnet test backend/Candidatos.slnx
+dotnet test backend/Candidatos.slnx          # precisa do Docker rodando (Testcontainers)
 dotnet run --project backend/src/Candidatos.Api   # http://localhost:5290; em Development aplica as migrations
 
 dotnet ef migrations add <Nome> --project backend/src/Candidatos.Api
 dotnet ef database update --project backend/src/Candidatos.Api
+dotnet ef migrations has-pending-model-changes --project backend/src/Candidatos.Api
 ```
 
 ## Regras de trabalho
