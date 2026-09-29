@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <None Include="..\..\..\exemplos\*.pdf" LinkBase="exemplos" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\casos-de-validacao.json" Link="casos-de-validacao.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

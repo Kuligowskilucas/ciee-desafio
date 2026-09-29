@@ -95,14 +95,7 @@ public class CandidatosEndpointsTests(ApiFixture fixture)
     }
 
     [Theory]
-    [InlineData("joao")]
-    [InlineData("joao@exemplo")]
-    [InlineData("joao@exemplo.c")]
-    [InlineData("joao@.com")]
-    [InlineData("joao@exemplo..com")]
-    [InlineData("joao@exemplo.com.")]
-    [InlineData("jo ao@exemplo.com")]
-    [InlineData("a@b@exemplo.com")]
+    [MemberData(nameof(CasosDeValidacao.EmailsInvalidos), MemberType = typeof(CasosDeValidacao))]
     public async Task Cadastrar_ComEmailInvalido_Retorna400(string email)
     {
         var resposta = await Cadastrar(CandidatoValido(email));
@@ -112,9 +105,7 @@ public class CandidatosEndpointsTests(ApiFixture fixture)
     }
 
     [Theory]
-    [InlineData("joao.silva+cv@empresa.com.br")]
-    [InlineData("ana@sub.dominio.io")]
-    [InlineData("joão@exemplo.com.br")]
+    [MemberData(nameof(CasosDeValidacao.EmailsValidos), MemberType = typeof(CasosDeValidacao))]
     public async Task Cadastrar_ComEmailValido_Retorna201(string email)
     {
         var resposta = await Cadastrar(CandidatoValido($"{Guid.NewGuid():N}{email}"));
