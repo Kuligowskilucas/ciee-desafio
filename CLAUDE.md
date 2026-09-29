@@ -25,6 +25,9 @@ Enunciado completo em `docs/DESAFIO.md`. Prazo: domingo, 04/10, 23h59.
 
 - Backend: ASP.NET Core Web API (.NET 10) com controllers.
 - Banco: SQL Server 2022 via `docker-compose.yml` na raiz, com EF Core e migrations.
+- Docker: o mesmo `docker-compose.yml` sobe banco, API (imagem aspnet:10.0) e frontend (build
+  estático servido por nginx:1.30-alpine, que repassa /api para a API). Só a porta 8080 do front
+  é exposta, além da 1433 do banco.
 - Testes: xUnit no backend.
 - Leitura de PDF: PdfPig 0.1.16.
 - Frontend: React 19 + TypeScript + Vite 8, em `frontend/`, com React Router 8 (modo declarativo),
@@ -33,7 +36,9 @@ Enunciado completo em `docs/DESAFIO.md`. Prazo: domingo, 04/10, 23h59.
 ## Estrutura atual
 
 ```
-docker-compose.yml          SQL Server 2022 (container ciee-sqlserver, porta 1433)
+docker-compose.yml          sqlserver (container ciee-sqlserver, porta 1433, healthcheck), api (migrations na subida,
+                            espera o banco healthy) e frontend (nginx na porta 8080)
+.dockerignore               contexto de build na raiz, sem .env, .git, node_modules, bin, obj e dist
 .env.example                variáveis do compose (SA_PASSWORD); o .env real não é versionado
 dotnet-tools.json           ferramentas locais do .NET (dotnet-ef)
 docs/DESAFIO.md             enunciado
@@ -43,6 +48,7 @@ exemplos/                   currículos fictícios: normal, protegido por senha 
 casos-de-validacao.json     e-mails e telefones válidos/inválidos, lidos pelos testes do backend (xUnit) e do frontend (Vitest)
 backend/
   Candidatos.slnx           solution
+  Dockerfile                sdk:10.0 publica a API; aspnet:10.0 roda como usuário app, na porta 8080
   src/Candidatos.Api/       Web API
     Program.cs              DI, ProblemDetails (títulos em português), exception handler, checagem da connection string
     Controllers/            CandidatosController (POST, GET lista, GET por id), CurriculosController (POST extrair)
@@ -65,8 +71,11 @@ backend/
     ArquivoEnviadoTests.cs  falha se o formulário for lido antes, sem os limites
     TelefoneBrasileiroTests.cs   unitários da normalização do telefone
     ErroNaoTratadoTests.cs  500 em ProblemDetails sem stack trace
+    MigrationsNaSubidaTests.cs  flag Migrations:AplicarAoIniciar fora de Development (cria ou não o banco)
 frontend/                   React + TypeScript (Vite)
   vite.config.ts            proxy de /api para a API (5290) no dev e no preview; Vitest com jsdom
+  Dockerfile                node:24-alpine faz o build; nginx:1.30-alpine serve o dist
+  nginx.conf                fallback da SPA; /api repassado para api:8080 sem gravar o corpo em disco, até 28 MB
   src/
     main.tsx, App.tsx       BrowserRouter; cabeçalho e rotas (/candidatos, /candidatos/novo, /candidatos/:id)
     api.ts                  tipos dos DTOs, fetch com erros tipados (ErroDaApi, ApiIndisponivel), endpoints
@@ -82,7 +91,11 @@ frontend/                   React + TypeScript (Vite)
 
 ```bash
 cp .env.example .env                        # depois definir SA_PASSWORD (senha forte)
-docker compose up -d                        # sobe o SQL Server
+docker compose up                           # caminho rápido: banco, API e front; http://localhost:8080
+docker compose up --build                   # idem, reconstruindo as imagens depois de mudar o código
+docker compose down                         # para tudo (-v apaga o volume do banco)
+
+docker compose up -d sqlserver              # caminho manual: só o SQL Server
 docker compose ps                           # esperar status healthy
 
 dotnet tool restore                         # instala o dotnet-ef local

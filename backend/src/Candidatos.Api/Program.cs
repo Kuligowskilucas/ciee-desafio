@@ -2,6 +2,7 @@ using Candidatos.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
 const string NomeConnectionString = "Candidatos";
+const string ChaveAplicarMigrationsAoIniciar = "Migrations:AplicarAoIniciar";
 const string MensagemConnectionStringAusente =
     "Connection string 'Candidatos' não configurada. Defina com: " +
     "dotnet user-secrets set \"ConnectionStrings:Candidatos\" \"<connection string>\" " +
@@ -37,11 +38,14 @@ if (app.Configuration.GetConnectionString(NomeConnectionString) is null)
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>(ChaveAplicarMigrationsAoIniciar))
 {
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<CandidatosDbContext>().Database.Migrate();
+}
 
+if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi();
 }
 

@@ -43,8 +43,9 @@ formulário com `useState`, sem biblioteca.
   foi adicionado para evitar candidato duplicado, principalmente ao importar o mesmo PDF duas vezes.
 - **Connection string em user-secrets.** É o padrão do .NET para segredos em desenvolvimento:
   um comando, sem código extra e sem credenciais nos arquivos versionados.
-- **Migrations aplicadas automaticamente só em Development.** Menos passos para quem avalia:
-  basta rodar a API. Em produção, as migrations seriam aplicadas no deploy.
+- **Migrations aplicadas automaticamente em Development e no docker compose.** Menos passos para
+  quem avalia: basta rodar a API ou o compose. Fora disso, só com a flag
+  `Migrations:AplicarAoIniciar`; em produção, seriam aplicadas no deploy.
 - **`CriadoEm` como `DateTimeOffset`.** Com `DateTime`, a data sairia no JSON sem fuso e o
   navegador mostraria a hora errada. Assim ela chega em UTC explícito.
 - **Controller acessa o DbContext direto, sem camada de serviço.** São três operações simples,
@@ -163,6 +164,28 @@ formulário com `useState`, sem biblioteca.
   `MemoryRouter` e encontram os elementos pelo papel e pelo rótulo acessível (`aria-invalid`,
   `aria-describedby`, `role="alert"` e `role="status"`).
 
+### Docker
+
+- **Um só `docker compose up` para banco, API e frontend.** O compose do SQL Server ganhou os
+  serviços `api` e `frontend`. O caminho manual sobe só o banco (`docker compose up -d sqlserver`).
+- **Frontend servido por nginx**, com fallback da SPA e `/api` repassado para a API. Isso resolve
+  a limitação do proxy do Vite, que só existe no dev, com uma imagem pequena e uma config curta.
+- **`proxy_request_buffering off` no `/api`.** Por padrão, o nginx grava corpos grandes num
+  arquivo temporário; medido: um PDF de 1 MB foi para `client_temp`. Com o repasse direto, o PDF
+  continua só em memória, e o limite de 5 MB segue na API (413 em português, medido com 7 MB).
+- **`client_max_body_size 28m`:** acima dos 5 MB, para quem decide ser a API, e abaixo do limite
+  do Kestrel (~28,6 MB), para ele nunca fechar a conexão no meio do upload.
+- **Migrations na subida por flag (`Migrations__AplicarAoIniciar=true`)**, ligada só no compose:
+  no container, a API continua em Production.
+- **A API espera o banco com `depends_on: condition: service_healthy`**, usando o healthcheck
+  que já existia no SQL Server, sem código de retry na aplicação.
+- **Só a porta 8080 exposta, além da 1433.** A API é acessada pelo nginx, e o caminho rápido não
+  disputa as portas do manual (5290 e 5173).
+- **Contexto de build na raiz,** porque o `npm run build` checa os tipos dos testes, que leem o
+  `casos-de-validacao.json`. O `.dockerignore` deixa de fora `.env`, `.git` e os artefatos.
+- **Connection string numa variável de ambiente do compose,** montada com o `SA_PASSWORD` do
+  `.env`, sem credencial versionada. A API roda com o usuário não root `app`, da imagem oficial.
+
 ## Uso de IA
 
 **Ferramentas e modelos**
@@ -252,8 +275,9 @@ Cerca de 8 horas e 40 minutos, todas na terça, 29/09:
 
 ## Limitações
 
-- Fora de Development as migrations não são aplicadas ao iniciar a API; é preciso rodar
-  `dotnet ef database update` (ou gerar um script SQL) antes.
+- Fora de Development e do docker compose, as migrations não são aplicadas ao iniciar a API:
+  é preciso rodar `dotnet ef database update` (ou gerar um script SQL) antes, ou ligar a flag
+  `Migrations:AplicarAoIniciar`.
 - A listagem não tem paginação: devolve todos os candidatos de uma vez.
 - A regex de e-mail aceita alguns endereços inválidos na parte local (`a..b@x.com`, `.a@x.com`)
   e rejeita formatos válidos mas raros (`user@localhost`, IP entre colchetes, parte local entre aspas).
@@ -293,8 +317,9 @@ Cerca de 8 horas e 40 minutos, todas na terça, 29/09:
 
 ### Frontend
 
-- **O proxy só existe no `npm run dev` e no `npm run preview`.** Para publicar o build em outro
-  servidor, ele precisa repassar `/api` para a API, ou o backend precisa liberar CORS.
+- **O proxy do Vite só existe no `npm run dev` e no `npm run preview`.** No docker compose, quem
+  repassa o `/api` é o nginx. Em outro servidor, seria preciso fazer o mesmo, ou liberar CORS no
+  backend.
 - **As regex do front são cópias das do backend.** O arquivo de casos só garante que as duas
   concordam nos casos listados nele.
 - **Os tamanhos máximos dos campos só são conferidos no backend:** o erro aparece no campo
@@ -304,6 +329,18 @@ Cerca de 8 horas e 40 minutos, todas na terça, 29/09:
   detalhes. Não há testes ponta a ponta num navegador de verdade: os testes do front usam jsdom
   e `fetch` simulado.
 - **A data de cadastro aparece no fuso do navegador.**
+
+### Docker
+
+- **Acima de 28 MB, pela porta 8080, quem responde é o nginx,** com um 413 em HTML, e não a nossa
+  mensagem. O frontend barra qualquer arquivo acima de 5 MB antes do envio.
+- **A API conecta como `sa`.** Em produção, teria um usuário próprio só com as permissões
+  necessárias.
+- **A espera pelo banco só vale na subida.** Se o SQL Server reiniciar depois, as requisições
+  falham até ele voltar, e a API não tenta de novo.
+- **A primeira execução baixa as imagens e faz os builds,** o que leva alguns minutos.
+- **O container do banco tem nome fixo (`ciee-sqlserver`) e usa a porta 1433,** então só uma
+  cópia do projeto sobe por vez na mesma máquina.
 
 ## Dificuldades e melhorias
 
@@ -322,4 +359,3 @@ Cerca de 8 horas e 40 minutos, todas na terça, 29/09:
 - OCR para PDFs digitalizados.
 - Paginação e busca na listagem; edição e exclusão de candidatos.
 - Testes ponta a ponta num navegador real (Playwright).
-- Subir API e frontend também pelo docker compose, para executar tudo com um comando.

@@ -34,13 +34,14 @@ public class ApiFixture : IAsyncLifetime
         await _sqlServer.DisposeAsync();
     }
 
-    public static WebApplicationFactory<Program> CriarFactory(string ambiente, string connectionString) =>
+    public static WebApplicationFactory<Program> CriarFactory(
+        string ambiente, string connectionString, IDictionary<string, string?>? outrasConfiguracoes = null) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment(ambiente);
             builder.ConfigureLogging(logging => logging.ClearProviders());
             builder.ConfigureAppConfiguration((_, configuracao) =>
-                configuracao.AddInMemoryCollection(new Dictionary<string, string?>
+                configuracao.AddInMemoryCollection(new Dictionary<string, string?>(outrasConfiguracoes ?? new Dictionary<string, string?>())
                 {
                     ["ConnectionStrings:Candidatos"] = connectionString,
                 }));

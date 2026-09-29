@@ -25,15 +25,22 @@ O relato do desenvolvimento está em [DESENVOLVIMENTO.md](DESENVOLVIMENTO.md).
 | Vitest / jsdom | 5.0.2 / 30.1.1 |
 | Testing Library (react, user-event, jest-dom) | 16.3.3, 14.6.7, 7.0.1 |
 | oxlint | 1.86.0 |
+| Imagens do caminho com Docker | `mcr.microsoft.com/dotnet/sdk:10.0` e `aspnet:10.0` (API), `node:24-alpine` (build do front), `nginx:1.30-alpine` (serve o front) |
 
 ## Pré-requisitos
+
+**Caminho rápido (tudo com Docker):** só Git e Docker com Docker Compose. Não é preciso ter o
+.NET SDK nem o Node instalados.
+
+**Caminho manual (passos 1 a 6, para desenvolver e rodar os testes):**
 
 - .NET SDK 10
 - Docker com Docker Compose (também é usado pelos testes)
 - Node.js 20.19+ ou 22.12+, com npm (para o frontend)
 - Git
-- Portas livres: 1433 (SQL Server), 5290 (API) e 5173 (frontend). Se já houver um SQL Server
-  local na 1433, pare-o antes do passo 1.
+
+Portas livres: 1433 (SQL Server, nos dois caminhos), 8080 (caminho rápido), 5290 (API) e
+5173 (frontend) do caminho manual. Se já houver um SQL Server local na 1433, pare-o antes.
 
 ## 0. Clonar o repositório
 
@@ -45,6 +52,37 @@ cd ciee-desafio
 Todos os comandos deste README rodam a partir dessa pasta, a raiz do repositório, exceto
 quando o passo indicar outra pasta (como `cd frontend`). Eles estão em sintaxe de bash (Linux,
 macOS, WSL ou Git Bash); no PowerShell, a continuação de linha com `\` não funciona.
+
+## Caminho rápido: tudo com Docker
+
+O único pré-requisito é o Docker com Docker Compose: o banco, a API e o frontend sobem em
+containers, sem .NET SDK nem Node instalados na máquina.
+
+```bash
+cp .env.example .env
+```
+
+Edite o `.env` e defina `SA_PASSWORD` com uma senha forte (as regras estão no passo 1 abaixo;
+evite `$`, `!`, `;` e aspas). Depois:
+
+```bash
+docker compose up
+```
+
+A primeira execução demora alguns minutos: o Docker baixa as imagens (SQL Server, SDK e runtime
+do .NET, Node e nginx) e faz o build da API e do frontend. As seguintes usam o cache.
+
+Quando os três serviços estiverem no ar, abra http://localhost:8080.
+
+- A API aplica as migrations ao subir, depois que o SQL Server fica saudável.
+- A API não é exposta diretamente: o nginx do frontend repassa `/api` para ela. Os exemplos com
+  curl usam a porta 8080, por exemplo
+  `curl -F "arquivo=@exemplos/curriculo-ficticio.pdf" http://localhost:8080/api/curriculos/extrair`.
+- Para parar: `Ctrl+C` ou `docker compose down`. Os dados ficam no volume `sqlserver-data`
+  (`docker compose down -v` apaga).
+- Depois de mudar o código: `docker compose up --build`.
+
+Os passos 1 a 6 abaixo são o caminho manual, que roda cada parte direto na máquina.
 
 ## 1. Subir o SQL Server
 
@@ -58,9 +96,12 @@ Use símbolos como `@`, `#`, `%` ou `_`: `$` e `!` são interpretados pelo shell
 `$` também pelo Docker Compose no `.env`), e `;` ou aspas quebram a connection string.
 
 ```bash
-docker compose up -d
+docker compose up -d sqlserver
 docker compose ps        # aguarde o status "healthy"
 ```
+
+Aqui sobe só o banco. Sem o nome do serviço, o `docker compose up` sobe também a API e o frontend
+em containers (caminho rápido).
 
 ## 2. Configurar a connection string
 
@@ -158,7 +199,8 @@ Em desenvolvimento, o Vite repassa as chamadas a `/api` para `http://localhost:5
 mostra "Não foi possível conectar à API".
 
 `npm run build` gera a versão de produção em `frontend/dist`, e `npm run preview` a serve com o
-mesmo proxy. Para publicar em outro servidor, ele precisa repassar `/api` para a API.
+mesmo proxy. Fora do Vite, o servidor precisa repassar `/api` para a API: é o que o nginx do
+caminho rápido faz (`frontend/nginx.conf`).
 
 ## 6. Testar
 

@@ -1,0 +1,9 @@
+.git
+.env
+*.md
+docs
+exemplos
+**/node_modules
+**/dist
+**/bin
+**/obj
