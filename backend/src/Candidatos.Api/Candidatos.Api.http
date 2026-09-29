@@ -32,3 +32,27 @@ GET {{Candidatos.Api_HostAddress}}/api/candidatos/1
 ###
 
 GET {{Candidatos.Api_HostAddress}}/api/candidatos/999999
+
+###
+
+POST {{Candidatos.Api_HostAddress}}/api/curriculos/extrair
+Content-Type: multipart/form-data; boundary=limite
+
+--limite
+Content-Disposition: form-data; name="arquivo"; filename="curriculo-ficticio.pdf"
+Content-Type: application/pdf
+
+< ../../../exemplos/curriculo-ficticio.pdf
+--limite--
+
+###
+
+POST {{Candidatos.Api_HostAddress}}/api/curriculos/extrair
+Content-Type: multipart/form-data; boundary=limite
+
+--limite
+Content-Disposition: form-data; name="arquivo"; filename="curriculo-protegido.pdf"
+Content-Type: application/pdf
+
+< ../../../exemplos/curriculo-protegido.pdf
+--limite--

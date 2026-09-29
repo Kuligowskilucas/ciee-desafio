@@ -20,6 +20,9 @@ builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = 
         StatusCodes.Status400BadRequest => "Dados inválidos",
         StatusCodes.Status404NotFound => "Recurso não encontrado",
         StatusCodes.Status409Conflict => "Conflito com um registro existente",
+        StatusCodes.Status413PayloadTooLarge => "Arquivo muito grande",
+        StatusCodes.Status415UnsupportedMediaType => "Tipo de arquivo não suportado",
+        StatusCodes.Status422UnprocessableEntity => "Não foi possível ler o arquivo",
         StatusCodes.Status500InternalServerError => "Erro interno no servidor",
         _ => context.ProblemDetails.Title,
     });

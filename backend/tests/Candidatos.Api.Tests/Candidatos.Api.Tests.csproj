@@ -24,4 +24,8 @@
     <ProjectReference Include="..\..\src\Candidatos.Api\Candidatos.Api.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\..\exemplos\*.pdf" LinkBase="exemplos" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

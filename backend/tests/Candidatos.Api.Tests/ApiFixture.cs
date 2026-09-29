@@ -13,16 +13,18 @@ public class ApiFixture : IAsyncLifetime
 
     public WebApplicationFactory<Program> Factory { get; private set; } = null!;
 
+    public string ConnectionString { get; private set; } = null!;
+
     public async Task InitializeAsync()
     {
         await _sqlServer.StartAsync();
 
-        var connectionString = new SqlConnectionStringBuilder(_sqlServer.GetConnectionString())
+        ConnectionString = new SqlConnectionStringBuilder(_sqlServer.GetConnectionString())
         {
             InitialCatalog = "CandidatosTestes",
         }.ConnectionString;
 
-        Factory = CriarFactory("Development", connectionString);
+        Factory = CriarFactory("Development", ConnectionString);
         Factory.CreateClient().Dispose();
     }
 

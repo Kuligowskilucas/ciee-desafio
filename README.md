@@ -10,6 +10,7 @@ O relato do desenvolvimento está em [DESENVOLVIMENTO.md](DESENVOLVIMENTO.md).
 | .NET SDK | 10.0.112 |
 | ASP.NET Core Web API (controllers) | .NET 10 |
 | Entity Framework Core (SqlServer, Design, dotnet-ef) | 10.0.12 |
+| PdfPig (leitura do texto dos PDFs) | 0.1.16 |
 | SQL Server | imagem `mcr.microsoft.com/mssql/server:2022-latest` (testado com 16.0.4295.3) |
 | xUnit | 2.9.3 |
 | Microsoft.AspNetCore.Mvc.Testing | 10.0.12 |
@@ -76,15 +77,47 @@ A API sobe em `http://localhost:5290`. Endpoints:
 | POST | `/api/candidatos` | cadastra um candidato (201; 400 se inválido; 409 se o e-mail já existe) |
 | GET | `/api/candidatos` | lista resumida, mais recentes primeiro |
 | GET | `/api/candidatos/{id}` | detalhes (404 se não existir) |
+| POST | `/api/curriculos/extrair` | lê um currículo em PDF e devolve nome, e-mail e telefone encontrados (não salva nada) |
 
 Exemplos prontos em `backend/src/Candidatos.Api/Candidatos.Api.http`. Erros seguem o formato
-ProblemDetails (`application/problem+json`).
+ProblemDetails (`application/problem+json`), com a mensagem para o usuário em `detail`.
+
+### Importação de currículo em PDF
+
+O arquivo vai no campo `arquivo` de um `multipart/form-data`:
+
+```bash
+curl -F "arquivo=@exemplos/curriculo-ficticio.pdf" http://localhost:5290/api/curriculos/extrair
+```
+
+```json
+{ "nomeCompleto": "Mariana Alves Ferreira", "email": "mariana.ferreira@example.com", "telefone": "(41) 98765-4321" }
+```
+
+O que não for identificado volta como `null`. Respostas de erro:
+
+| Status | Situação |
+|---|---|
+| 400 | nenhum arquivo enviado (ou formulário malformado) |
+| 413 | arquivo com mais de 5 MB (5 × 1024 × 1024 bytes) |
+| 415 | o conteúdo não é PDF (a assinatura `%PDF-` é conferida; extensão e content-type não) |
+| 422 | PDF corrompido, protegido por senha ou sem texto selecionável (digitalizado) |
+
+A pasta `exemplos/` tem currículos fictícios para testar a importação (também usados nos testes):
+
+| Arquivo | Resultado esperado |
+|---|---|
+| `curriculo-ficticio.pdf` | 200 com nome, e-mail e telefone |
+| `curriculo-protegido.pdf` | 422, protegido por senha (a senha é `ciee2026`) |
+| `curriculo-digitalizado.pdf` | 422, sem texto selecionável (é o mesmo currículo convertido em imagem) |
 
 ## 5. Testar
 
 O Docker precisa estar rodando. Os testes de integração sobem um SQL Server próprio em
 container (Testcontainers) e aplicam as migrations nele; não usam o banco do `docker compose`
 nem os user-secrets. A primeira execução pode demorar enquanto baixa a imagem do SQL Server.
+A interpretação do texto do currículo e a regra do telefone também têm testes unitários, que
+não dependem de PDF nem de banco.
 
 ```bash
 dotnet test backend/Candidatos.slnx

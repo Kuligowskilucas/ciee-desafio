@@ -30,6 +30,7 @@ Enunciado completo em `docs/DESAFIO.md`. Prazo: domingo, 04/10, 23h59.
 - Backend: ASP.NET Core Web API (.NET 10) com controllers.
 - Banco: SQL Server 2022 via `docker-compose.yml` na raiz, com EF Core e migrations.
 - Testes: xUnit no backend.
+- Leitura de PDF: PdfPig 0.1.16.
 - Frontend: React + TypeScript + Vite, em `frontend/` (ainda não criado).
 
 ## Estrutura atual
@@ -41,20 +42,28 @@ dotnet-tools.json           ferramentas locais do .NET (dotnet-ef)
 docs/DESAFIO.md             enunciado
 README.md                   como configurar, executar e testar do zero
 DESENVOLVIMENTO.md          relato do desenvolvimento (decisões técnicas e limitações mantidas aqui)
+exemplos/                   currículos fictícios: normal, protegido por senha (ciee2026) e digitalizado; usados nos testes
 backend/
   Candidatos.slnx           solution
   src/Candidatos.Api/       Web API
     Program.cs              DI, ProblemDetails (títulos em português), exception handler, checagem da connection string
-    Controllers/            CandidatosController (POST, GET lista, GET por id)
-    Dtos/                   CriarCandidatoDto (validação + normalização), CandidatoDto, CandidatoResumoDto
+    Controllers/            CandidatosController (POST, GET lista, GET por id), CurriculosController (POST extrair)
+    Curriculos/             extração do PDF: ArquivoEnviado (leitura do upload com limite de 5 MB, só em memória),
+                            LeitorPdf (PdfPig → texto), InterpretadorCurriculo (texto → nome, e-mail, telefone; puro)
+    Dtos/                   CriarCandidatoDto (validação + normalização), CandidatoDto, CandidatoResumoDto, DadosCurriculoDto
     Entities/               entidades do domínio (Candidato, com constantes de tamanho máximo)
     Validacao/              TelefoneBrasileiro (formato aceito e normalização para "(41) 99999-8888")
     Data/                   CandidatosDbContext (tamanhos, índices, defaults via Fluent API)
     Migrations/             migrations do EF Core (geradas, não editar à mão)
     Candidatos.Api.http     exemplos de requisições
-  tests/Candidatos.Api.Tests/  testes xUnit de integração
+  tests/Candidatos.Api.Tests/  testes xUnit (integração e unitários)
     ApiFixture.cs           SQL Server via Testcontainers + WebApplicationFactory (collection fixture)
+    PdfDeTeste.cs           gera PDFs com o builder do PdfPig e lê os de exemplos/
     CandidatosEndpointsTests.cs  cadastro, validação, 409, listagem, detalhe, 404
+    CurriculosEndpointsTests.cs  extração: sucesso, 400, 413 (inclusive com Kestrel real), 415, 422
+    InterpretadorCurriculoTests.cs  unitários de nome, e-mail e telefone sobre textos (CPF, CEP, datas)
+    LeitorPdfTests.cs       quebras de linha e separação de páginas
+    ArquivoEnviadoTests.cs  falha se o formulário for lido antes, sem os limites
     TelefoneBrasileiroTests.cs   unitários da normalização do telefone
     ErroNaoTratadoTests.cs  500 em ProblemDetails sem stack trace
 ```
@@ -74,6 +83,7 @@ dotnet user-secrets set "ConnectionStrings:Candidatos" \
 dotnet build backend/Candidatos.slnx
 dotnet test backend/Candidatos.slnx          # precisa do Docker rodando (Testcontainers)
 dotnet run --project backend/src/Candidatos.Api   # http://localhost:5290; em Development aplica as migrations
+curl -F "arquivo=@exemplos/curriculo-ficticio.pdf" http://localhost:5290/api/curriculos/extrair
 
 dotnet ef migrations add <Nome> --project backend/src/Candidatos.Api
 dotnet ef database update --project backend/src/Candidatos.Api

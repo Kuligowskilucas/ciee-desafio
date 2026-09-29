@@ -12,11 +12,20 @@ public static partial class TelefoneBrasileiro
     [GeneratedRegex($"^{Numero}$")]
     private static partial Regex NumeroCompleto();
 
+    [GeneratedRegex($@"(?<![\d+]){Numero}(?!\d)")]
+    private static partial Regex NumeroNoTexto();
+
     public static string? Normalizar(string valor)
     {
         var numero = NumeroCompleto().Match(valor);
         return numero.Success ? Formatar(numero) : null;
     }
+
+    public static string? EncontrarNoTexto(string texto) =>
+        NumeroNoTexto().Matches(texto)
+            .Where(numero => !numero.Value.All(char.IsAsciiDigit))
+            .Select(Formatar)
+            .FirstOrDefault();
 
     private static string Formatar(Match numero)
     {
