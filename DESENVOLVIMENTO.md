@@ -27,6 +27,18 @@ arquivo de notas, que é a base deste relato.
 
 ## Decisões técnicas
 
+**Visão geral.** O backend é a fonte da verdade das regras de validação. O frontend repete só
+as de e-mail e telefone, e o `casos-de-validacao.json`, lido pelos testes dos dois lados (xUnit
+e Vitest), garante que elas continuem iguais. O telefone é aceito só como brasileiro com DDD e
+gravado sempre como `(41) 99999-8888`, pela mesma regra no cadastro e na extração do PDF. A
+extração separa a leitura do PDF (PdfPig) da interpretação do texto, uma classe pura testada só
+com textos, e prefere deixar um campo vazio a preenchê-lo errado. O arquivo enviado fica só em
+memória, o limite de 5 MB é aplicado na leitura do formulário, e todo problema com o arquivo
+chega ao usuário como mensagem em português (400, 413, 415 ou 422), nunca como 500. Os testes
+de integração rodam contra infraestrutura real: SQL Server via Testcontainers e, no limite de
+upload, Kestrel real. No frontend, a escolha foi pelo simples: proxy do Vite em vez de CORS e
+formulário com `useState`, sem biblioteca.
+
 - **E-mail único por candidato.** Índice único na coluna `Email`. Não está no enunciado;
   foi adicionado para evitar candidato duplicado, principalmente ao importar o mesmo PDF duas vezes.
 - **Connection string em user-secrets.** É o padrão do .NET para segredos em desenvolvimento:
