@@ -54,6 +54,23 @@ export class ApiIndisponivel extends Error {
   }
 }
 
+export function mensagemDoErro(erro: unknown, mensagemPadrao: string): string {
+  if (erro instanceof ApiIndisponivel) {
+    return erro.message
+  }
+
+  if (erro instanceof ErroDaApi) {
+    if (erro.problema.detail) {
+      return erro.problema.detail
+    }
+    if (erro.problema.status >= 500) {
+      return 'Ocorreu um erro no servidor. Tente novamente.'
+    }
+  }
+
+  return mensagemPadrao
+}
+
 export function listarCandidatos(signal?: AbortSignal) {
   return requisitar<CandidatoResumoDto[]>('/api/candidatos', { signal })
 }

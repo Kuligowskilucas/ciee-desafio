@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from 'react-router'
+import { CadastroCandidato } from './paginas/CadastroCandidato'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       </header>
       <main className="conteudo">
         <Routes>
+          <Route path="/candidatos/novo" element={<CadastroCandidato />} />
           <Route path="*" element={<PaginaNaoEncontrada />} />
         </Routes>
       </main>
