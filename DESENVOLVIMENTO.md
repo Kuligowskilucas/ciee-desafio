@@ -18,6 +18,8 @@ A ordem foi:
 5. Extração do PDF.
 6. Frontend, dividido em 6 passos: casos de validação compartilhados, projeto Vite,
    cliente da API e validações, tela de cadastro, lista e detalhes, documentação.
+7. Melhorias finais, escolhidas da minha lista de melhorias: nome em caixa alta
+   convertido para iniciais maiúsculas, e execução de tudo com docker compose.
 
 Em todas as etapas segui o mesmo ciclo: prompt com escopo e fora de escopo definidos,
 perguntas do Claude Code sobre o que não estava no enunciado, plano revisado e aprovado
@@ -234,6 +236,11 @@ viesse como pergunta, com prós e contras, em vez de ser implementada direto.
   o state da navegação fica no histórico do navegador, e pedi a correção.
 - Deixei de fora extrair área de interesse e resumo do PDF: esses campos não têm padrão
   confiável no texto, e um campo preenchido errado é pior que um vazio.
+- Com a parte obrigatória pronta, revisei minha lista de melhorias e escolhi só duas,
+  pelo custo-benefício: executar tudo com docker compose (facilidade de execução é
+  critério de avaliação) e converter nome em caixa alta (pequena e melhora a extração).
+  Deixei OCR, paginação, edição e testes em navegador documentados, sem implementar,
+  para não aumentar a complexidade além do que o desafio pede.
 
 **O que a IA fez bem sem eu pedir**
 - Achou um bug sutil no upload: qualquer parâmetro na action fazia o ASP.NET ler o
@@ -242,7 +249,7 @@ viesse como pergunta, com prós e contras, em vez de ser implementada direto.
 
 ## Verificação
 
-- **Testes automatizados:** 133 no backend (xUnit, com SQL Server real via Testcontainers)
+- **Testes automatizados:** 145 no backend (xUnit, com SQL Server real via Testcontainers)
   e 68 no frontend (Vitest + Testing Library). Lint e build sem avisos.
 - **Regras compartilhadas:** o `casos-de-validacao.json` é lido pelos testes dos dois
   lados. Para provar que funciona, foi colocado de propósito um caso errado de cada
@@ -254,7 +261,16 @@ viesse como pergunta, com prós e contras, em vez de ser implementada direto.
 - **Teste manual no navegador, feito por mim:** validação dos campos, importação dos três
   PDFs de exemplo, e-mail duplicado, API parada, lista, detalhes e F5. Foi nesse teste
   que achei o problema da mensagem no F5.
-- **Do zero:** [clonei o repositório numa pasta nova e segui o README; resultado: ...]
+- **Do zero:** clonei o repositório numa pasta nova e segui o README. O passo da
+  migration falhou com NETSDK1004 (pacotes não restaurados num clone novo). Pedi ao
+  Claude Code que reproduzisse o teste num ambiente isolado; ele confirmou o erro,
+  adicionou o `dotnet build` antes do `dotnet ef`, incluiu o passo de clonar e avisou
+  sobre símbolos na senha (`$` quebra no Docker Compose). Depois de cada melhoria, o
+  teste do zero foi repetido.
+- **Docker compose:** testado do zero pela porta 8080: página, F5 numa rota do front,
+  extração, cadastro, listagem e PDF de 7 MB recebendo o nosso 413. Para provar que o
+  PDF não vai para o disco no nginx, a configuração foi retirada de propósito: um PDF
+  de 1 MB foi gravado em arquivo temporário. Com ela de volta, nenhum arquivo foi gravado.
 - Para entender o que estava sendo entregue, pedi explicação dos conceitos novos de .NET
   e React que apareceram, como injeção de dependência, `DbContext`, `[GeneratedRegex]`,
   a palavra-chave `field` do C# 14 e o estado derivado no lugar de `setState` no efeito.
@@ -262,7 +278,7 @@ viesse como pergunta, com prós e contras, em vez de ser implementada direto.
 
 ## Tempo dedicado
 
-Cerca de 8 horas e 40 minutos, todas na terça, 29/09:
+Cerca de 10 horas e 10 minutos:
 
 | Etapa | Tempo |
 |---|---|
@@ -272,6 +288,7 @@ Cerca de 8 horas e 40 minutos, todas na terça, 29/09:
 | Telefone | 2h30 |
 | Extração do PDF | 1h |
 | Frontend e documentação | 3h |
+| Melhorias finais (nome em caixa alta e docker compose) | 1h30 |
 
 ## Limitações
 
@@ -352,6 +369,9 @@ Cerca de 8 horas e 40 minutos, todas na terça, 29/09:
   navegador. Foi preciso medir cada caso para escolher a solução.
 - O Claude Code não conseguiu abrir o navegador no WSL, então a verificação das telas
   foi manual.
+- No docker compose, cada camada (nginx, Kestrel e a própria API) tem o seu limite de
+  tamanho e o seu comportamento com o corpo da requisição. Foi preciso alinhar os três
+  para a mensagem de erro continuar sendo a nossa.
 
 **Melhorias com mais tempo**
 - Sugerir área de interesse e resumo a partir de seções como "Objetivo" e "Resumo" do
