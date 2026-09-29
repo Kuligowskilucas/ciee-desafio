@@ -2,6 +2,29 @@
 
 ## Organização do trabalho
 
+Recebi o desafio na terça, 29/09, e fiz o desenvolvimento no mesmo dia. O plano inicial
+ia até sábado, mas o ritmo permitiu terminar a parte principal antes; os dias seguintes
+ficaram para revisão.
+
+Comecei planejando no chat do Claude: stack, cronograma e ordem das etapas. Escolhi .NET
+no backend por ser uma das opções da vaga e React no front, onde tenho mais experiência,
+para concentrar o aprendizado no .NET. Minha base é Laravel e React.
+
+A ordem foi:
+1. Ambiente no WSL (.NET 10, Node, Docker) e SQL Server via docker compose.
+2. EF Core, entidade Candidato e migration.
+3. CRUD, validação e testes de integração.
+4. Validação e normalização do telefone.
+5. Extração do PDF.
+6. Frontend, dividido em 6 passos: casos de validação compartilhados, projeto Vite,
+   cliente da API e validações, tela de cadastro, lista e detalhes, documentação.
+
+Em todas as etapas segui o mesmo ciclo: prompt com escopo e fora de escopo definidos,
+perguntas do Claude Code sobre o que não estava no enunciado, plano revisado e aprovado
+por mim, implementação, verificação e commit feito por mim. As regras desse ciclo estão
+no `CLAUDE.md`, que mantive no repositório de propósito. Durante o trabalho mantive um
+arquivo de notas, que é a base deste relato.
+
 ## Decisões técnicas
 
 - **E-mail único por candidato.** Índice único na coluna `Email`. Não está no enunciado;
@@ -128,9 +151,90 @@
 
 ## Uso de IA
 
+**Ferramentas e modelos**
+- Claude (claude.ai, modelo Claude Opus 5.5), num Projeto: planejamento, revisão dos
+  planos e das respostas do Claude Code, e redação dos prompts.
+- Claude Code (Claude Opus 5.5, effort high), no WSL: implementação, testes e as seções
+  "Decisões técnicas" e "Limitações" deste arquivo.
+- O texto destas seções (organização, uso de IA, verificação, tempo e melhorias) foi
+  redigido com ajuda do Claude a partir das minhas notas e revisado por mim.
+
+**Como conduzi**
+Criei o `CLAUDE.md` com o enunciado, a stack e regras de trabalho, algumas acrescentadas
+por mim: sem comentários no código, nomes do domínio em português, testes em toda regra
+de negócio e nenhum commit feito pela IA. Nos prompts, pedi que qualquer decisão fora do enunciado
+viesse como pergunta, com prós e contras, em vez de ser implementada direto.
+
+**Exemplos de pedidos e como usei as respostas**
+- Na etapa do banco, pedi opções com prós e contras para a connection string e para a
+  aplicação das migrations. Escolhi user-secrets (padrão do .NET, sem código extra) e
+  migration automática só em Development (menos passos para quem avalia).
+- A extração do PDF acabou com uma leitura manual do formulário, que me pareceu complexa
+  demais para "uma solução simples". Perguntei por que não usar `IFormFile` com
+  `[RequestSizeLimit]`, pedindo só a comparação, sem mudar código. Ele mediu as duas
+  opções: com os atributos, um arquivo grande vira erro de rede ou um 400 genérico em
+  inglês. Mantive a solução, porque o enunciado pede mensagens claras para arquivo
+  inválido, e pedi que a comparação fosse registrada nas decisões técnicas.
+- No frontend, ele trouxe as opções em duas rodadas de perguntas (comunicação com a API,
+  formulário, rotas, estilo, regras compartilhadas, comportamento do PDF, destino após
+  salvar, mocks). Escolhi as mais simples que atendiam o enunciado e acrescentei duas
+  exigências: validação em funções puras testáveis e os testes do backend também lendo
+  o JSON de casos compartilhados.
+
+**O que corrigi, recusei ou mudei**
+- Recusei a recomendação de devolver o DTO completo na listagem. Escolhi um DTO resumido,
+  para a API refletir as telas de lista e de detalhes.
+- Pedi `CriadoEm` com fuso explícito: como `DateTime`, a data sairia sem fuso no JSON e
+  o navegador mostraria a hora errada.
+- Pedi que a API falhe na subida em qualquer ambiente se faltar a connection string
+  (o plano tinha deixado isso só em Development) e títulos de erro em português.
+- Pedi versões exatas no README (ele tinha posto só "10.0").
+- O plano do frontend previa um único commit. Pedi 6, com pausa em cada um, para o
+  histórico mostrar a evolução e para eu revisar em partes menores.
+- A IA também errou. O chat indicou um nome de pacote que não existe no apt
+  (`dotnet-sdk`, o certo é `dotnet-sdk-10.0`). Também previu que a mensagem "Cadastro
+  salvo" sumiria ao dar F5 nos detalhes; no teste manual vi que ela continuava, porque
+  o state da navegação fica no histórico do navegador, e pedi a correção.
+- Deixei de fora extrair área de interesse e resumo do PDF: esses campos não têm padrão
+  confiável no texto, e um campo preenchido errado é pior que um vazio.
+
+**O que a IA fez bem sem eu pedir**
+- Achou um bug sutil no upload: qualquer parâmetro na action fazia o ASP.NET ler o
+  formulário antes, com os limites padrão, e a checagem de 5 MB deixava de funcionar
+  sem nenhum teste falhar.
+
 ## Verificação
 
+- **Testes automatizados:** 133 no backend (xUnit, com SQL Server real via Testcontainers)
+  e 68 no frontend (Vitest + Testing Library). Lint e build sem avisos.
+- **Regras compartilhadas:** o `casos-de-validacao.json` é lido pelos testes dos dois
+  lados. Para provar que funciona, foi colocado de propósito um caso errado de cada
+  lado, e os testes falharam; depois o arquivo foi restaurado.
+- **Testes de mutação:** na extração, o código foi quebrado de propósito em três pontos,
+  e os testes pegaram as três quebras.
+- **API real:** os 7 cenários de upload testados com curl (PDF fictício, protegido,
+  digitalizado, sem arquivo, .txt renomeado, 7 MB e 40 MB).
+- **Teste manual no navegador, feito por mim:** validação dos campos, importação dos três
+  PDFs de exemplo, e-mail duplicado, API parada, lista, detalhes e F5. Foi nesse teste
+  que achei o problema da mensagem no F5.
+- **Do zero:** [clonei o repositório numa pasta nova e segui o README; resultado: ...]
+- Para entender o que estava sendo entregue, pedi explicação dos conceitos novos de .NET
+  e React que apareceram, como injeção de dependência, `DbContext`, `[GeneratedRegex]`,
+  a palavra-chave `field` do C# 14 e o estado derivado no lugar de `setState` no efeito.
+
+
 ## Tempo dedicado
+
+Cerca de 8 horas e 40 minutos, todas na terça, 29/09:
+
+| Etapa | Tempo |
+|---|---|
+| Planejamento e ambiente | 1h |
+| Banco, entidade e migration | 1h30 |
+| CRUD, validação e testes | 40 min |
+| Telefone | 2h30 |
+| Extração do PDF | 1h |
+| Frontend e documentação | 3h |
 
 ## Limitações
 
@@ -188,3 +292,21 @@
 - **A data de cadastro aparece no fuso do navegador.**
 
 ## Dificuldades e melhorias
+
+**Dificuldades**
+- .NET era a parte nova para mim. O que mais exigiu entendimento foi a configuração
+  (user-secrets, leitura tardia da connection string nos testes) e o tratamento do
+  upload, em que o model binding do ASP.NET lê o formulário antes da action.
+- Os limites de upload têm comportamentos diferentes no Kestrel, no formulário e no
+  navegador. Foi preciso medir cada caso para escolher a solução.
+- O Claude Code não conseguiu abrir o navegador no WSL, então a verificação das telas
+  foi manual.
+
+**Melhorias com mais tempo**
+- Sugerir área de interesse e resumo a partir de seções como "Objetivo" e "Resumo" do
+  currículo, com a pessoa confirmando antes de salvar.
+- OCR para PDFs digitalizados.
+- Converter nome em caixa alta ("MARIA DA SILVA" → "Maria da Silva").
+- Paginação e busca na listagem; edição e exclusão de candidatos.
+- Testes ponta a ponta num navegador real (Playwright).
+- Subir API e frontend também pelo docker compose, para executar tudo com um comando.

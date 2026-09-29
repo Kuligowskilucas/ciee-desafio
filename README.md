@@ -31,6 +31,20 @@ O relato do desenvolvimento está em [DESENVOLVIMENTO.md](DESENVOLVIMENTO.md).
 - .NET SDK 10
 - Docker com Docker Compose (também é usado pelos testes)
 - Node.js 20.19+ ou 22.12+, com npm (para o frontend)
+- Git
+- Portas livres: 1433 (SQL Server), 5290 (API) e 5173 (frontend). Se já houver um SQL Server
+  local na 1433, pare-o antes do passo 1.
+
+## 0. Clonar o repositório
+
+```bash
+git clone https://github.com/Kuligowskilucas/ciee-desafio.git
+cd ciee-desafio
+```
+
+Todos os comandos deste README rodam a partir dessa pasta, a raiz do repositório, exceto
+quando o passo indicar outra pasta (como `cd frontend`). Eles estão em sintaxe de bash (Linux,
+macOS, WSL ou Git Bash); no PowerShell, a continuação de linha com `\` não funciona.
 
 ## 1. Subir o SQL Server
 
@@ -40,6 +54,8 @@ cp .env.example .env
 
 Edite o `.env` e defina `SA_PASSWORD` com uma senha forte (mínimo de 8 caracteres, com
 maiúsculas, minúsculas, números e símbolos; senhas fracas fazem o container não subir).
+Use símbolos como `@`, `#`, `%` ou `_`: `$` e `!` são interpretados pelo shell no passo 2 (e o
+`$` também pelo Docker Compose no `.env`), e `;` ou aspas quebram a connection string.
 
 ```bash
 docker compose up -d
@@ -68,9 +84,14 @@ Ao rodar a API em Development (passo 4), as migrations pendentes são aplicadas
 automaticamente. Para aplicá-las manualmente:
 
 ```bash
+dotnet build backend/Candidatos.slnx
 dotnet tool restore
 dotnet ef database update --project backend/src/Candidatos.Api
 ```
+
+O `dotnet build` restaura os pacotes NuGet da solution. Num clone novo, sem ele, o `dotnet ef`
+falha com `NETSDK1004` (`project.assets.json` não encontrado). O `dotnet tool restore` instala o
+`dotnet-ef` na versão fixada em `dotnet-tools.json`.
 
 ## 4. Executar a API
 
@@ -121,7 +142,7 @@ A pasta `exemplos/` tem currículos fictícios para testar a importação (tamb�
 
 ## 5. Executar o frontend
 
-Com a API rodando (passo 4), em outro terminal:
+Com a API rodando (passo 4), abra outro terminal na raiz do repositório e rode:
 
 ```bash
 cd frontend
@@ -155,7 +176,8 @@ dotnet test backend/Candidatos.slnx
 
 ### Frontend
 
-Não precisa da API nem do banco: as chamadas ao `fetch` são simuladas nos testes.
+Não precisa da API nem do banco: as chamadas ao `fetch` são simuladas nos testes. A partir da
+raiz do repositório (o `npm install` do passo 5 precisa ter sido feito):
 
 ```bash
 cd frontend
