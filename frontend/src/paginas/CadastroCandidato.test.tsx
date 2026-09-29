@@ -1,9 +1,10 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes, useLocation, useParams } from 'react-router'
+import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+import App from '../App'
+import type { CandidatoDto } from '../api'
 import { TAMANHO_MAXIMO_PDF_EM_BYTES } from '../validacao'
-import { CadastroCandidato } from './CadastroCandidato'
 
 const MENSAGEM_API_FORA_DO_AR =
   'Não foi possível conectar à API. Verifique se o backend está rodando e tente novamente.'
@@ -30,23 +31,22 @@ function pdf(nome = 'curriculo.pdf', conteudo: BlobPart[] = ['%PDF-1.7 conteudo'
   return new File(conteudo, nome, { type: 'application/pdf' })
 }
 
-function DetalhesDeTeste() {
-  const { id } = useParams()
-  const { state } = useLocation()
-  return (
-    <p>
-      Detalhes do candidato {id}: {state?.mensagem}
-    </p>
-  )
+function candidatoSalvo(id: number, telefone: string | null = null): CandidatoDto {
+  return {
+    id,
+    nomeCompleto: 'Maria da Silva',
+    email: 'maria@exemplo.com',
+    telefone,
+    areaInteresse: null,
+    resumoProfissional: null,
+    criadoEm: '2026-09-29T18:00:00+00:00',
+  }
 }
 
 function renderizar() {
   render(
     <MemoryRouter initialEntries={['/candidatos/novo']}>
-      <Routes>
-        <Route path="/candidatos/novo" element={<CadastroCandidato />} />
-        <Route path="/candidatos/:id" element={<DetalhesDeTeste />} />
-      </Routes>
+      <App />
     </MemoryRouter>,
   )
 
@@ -153,7 +153,8 @@ describe('importação do PDF', () => {
           detail: 'O PDF está protegido por senha. Envie uma versão sem senha ou preencha os dados manualmente.',
         }),
       )
-      .mockResolvedValueOnce(json(201, { id: 7 }))
+      .mockResolvedValueOnce(json(201, candidatoSalvo(7)))
+      .mockResolvedValueOnce(json(200, candidatoSalvo(7)))
 
     await tela.usuario.upload(tela.arquivo(), pdf('protegido.pdf'))
     expect(await screen.findByRole('alert')).toHaveTextContent('O PDF está protegido por senha.')
@@ -161,20 +162,26 @@ describe('importação do PDF', () => {
     await preencherCandidatoValido(tela)
     await tela.usuario.click(tela.salvar())
 
-    expect(await screen.findByText('Detalhes do candidato 7: Cadastro salvo com sucesso.')).toBeInTheDocument()
+    expect(await screen.findByText('Cadastro salvo com sucesso.')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Maria da Silva' })).toBeInTheDocument()
   })
 })
 
 describe('envio do cadastro', () => {
-  test('salva e vai para os detalhes com a mensagem de sucesso', async () => {
+  test('salva e vai para os detalhes, que mostram a mensagem e os dados gravados', async () => {
     const tela = renderizar()
-    fetchMock.mockResolvedValueOnce(json(201, { id: 42 }))
+    fetchMock
+      .mockResolvedValueOnce(json(201, candidatoSalvo(42, '(41) 99999-8888')))
+      .mockResolvedValueOnce(json(200, candidatoSalvo(42, '(41) 99999-8888')))
     await preencherCandidatoValido(tela)
     await tela.usuario.type(tela.telefone(), '41999998888')
 
     await tela.usuario.click(tela.salvar())
 
-    expect(await screen.findByText('Detalhes do candidato 42: Cadastro salvo com sucesso.')).toBeInTheDocument()
+    expect(await screen.findByText('Cadastro salvo com sucesso.')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Maria da Silva' })).toBeInTheDocument()
+    expect(screen.getByText('(41) 99999-8888')).toBeInTheDocument()
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/candidatos/42')
     const [url, opcoes = {}] = fetchMock.mock.calls[0]
     expect(url).toBe('/api/candidatos')
     expect(opcoes.method).toBe('POST')

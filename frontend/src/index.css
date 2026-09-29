@@ -161,3 +161,57 @@ button:disabled {
   opacity: 0.6;
   cursor: wait;
 }
+
+.titulo-com-acao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.titulo-com-acao h1 {
+  margin: 0;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+}
+
+.tabela th,
+.tabela td {
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--cor-borda);
+  text-align: left;
+  vertical-align: top;
+}
+
+.tabela th {
+  background: var(--cor-fundo);
+  font-size: 0.9rem;
+}
+
+.detalhes {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+}
+
+.detalhes dt {
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+  font-size: 0.9rem;
+}
+
+.detalhes dd {
+  margin: 0 0 1rem;
+}
+
+.detalhes .resumo {
+  white-space: pre-line;
+}
