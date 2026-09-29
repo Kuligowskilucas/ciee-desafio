@@ -278,17 +278,18 @@ viesse como pergunta, com prós e contras, em vez de ser implementada direto.
 
 ## Tempo dedicado
 
-Cerca de 10 horas e 10 minutos:
+Cerca de 6 horas, todas na terça, 29/09, incluindo planejamento, configuração do
+ambiente, desenvolvimento, testes, documentação e as duas melhorias finais.
 
 | Etapa | Tempo |
 |---|---|
 | Planejamento e ambiente | 1h |
 | Banco, entidade e migration | 1h30 |
 | CRUD, validação e testes | 40 min |
-| Telefone | 2h30 |
+| Telefone | 1h30 |
 | Extração do PDF | 1h |
-| Frontend e documentação | 3h |
-| Melhorias finais (nome em caixa alta e docker compose) | 1h30 |
+| Frontend e documentação | 1h |
+| Melhorias finais (nome em caixa alta e docker compose) | 30 min |
 
 ## Limitações
 
