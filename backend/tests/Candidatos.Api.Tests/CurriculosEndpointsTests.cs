@@ -92,7 +92,7 @@ public class CurriculosEndpointsTests(ApiFixture fixture)
 
         Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
         var dados = await resposta.Content.ReadFromJsonAsync<DadosCurriculoDto>();
-        Assert.Equal(new DadosCurriculoDto("JOAO PEDRO SOUZA", "joao.souza@exemplo.com.br", "(41) 3333-4444"), dados);
+        Assert.Equal(new DadosCurriculoDto("Joao Pedro Souza", "joao.souza@exemplo.com.br", "(41) 3333-4444"), dados);
     }
 
     [Fact]

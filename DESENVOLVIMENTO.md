@@ -107,7 +107,9 @@ formulário com `useState`, sem biblioteca.
 - **Nome:** o primeiro trecho, nas 10 primeiras linhas, com 2 a 8 palavras só de letras e
   iniciais maiúsculas (conectivos como "da" à parte). Trechos com palavras de cabeçalho ou cargo
   ("Currículo", "Dados Pessoais", "Desenvolvedora") são pulados, e o rótulo "Nome:" é removido.
-  É devolvido como está no documento.
+- **Nome todo em maiúsculas vira iniciais maiúsculas** ("MARIA DA SILVA" → "Maria da Silva"),
+  com os conectivos da regra do nome (da, de, do, das, dos, e, di, du, del, van, von) em
+  minúsculas. Um nome que já mistura maiúsculas e minúsculas fica como está no documento.
 - **E-mail:** o primeiro trecho em volta de um `@` que passa na mesma regex do cadastro, em
   minúsculas; o que a extração devolve sempre é aceito pelo formulário.
 - **Telefone:** a mesma regra do cadastro, mas no texto do PDF uma sequência só de dígitos
@@ -273,8 +275,8 @@ Cerca de 8 horas e 40 minutos, todas na terça, 29/09:
 - **Nome:** não reconhece nome todo em minúsculas, nome de uma palavra só nem partícula minúscula
   fora da lista (`d'Ávila`). Um bairro ou cidade numa linha própria antes do nome pode ser
   confundido com ele.
-- **Nome em caixa alta** é devolvido como está ("MARIA DA SILVA"). Converter para "Maria da Silva"
-  fica como melhoria.
+- **Na conversão de nome em caixa alta** não dá para saber a caixa original: "MCDONALD" vira
+  "Mcdonald", e "PEDRO II" vira "Pedro Ii".
 - **E-mail** quebrado em duas linhas, ou escrito com espaços ou "[at]", não é reconhecido.
 - **Telefone:** só brasileiro com DDD. No texto, uma sequência só de dígitos sem +55 é ignorada,
   e o travessão não é aceito como separador.
@@ -318,7 +320,6 @@ Cerca de 8 horas e 40 minutos, todas na terça, 29/09:
 - Sugerir área de interesse e resumo a partir de seções como "Objetivo" e "Resumo" do
   currículo, com a pessoa confirmando antes de salvar.
 - OCR para PDFs digitalizados.
-- Converter nome em caixa alta ("MARIA DA SILVA" → "Maria da Silva").
 - Paginação e busca na listagem; edição e exclusão de candidatos.
 - Testes ponta a ponta num navegador real (Playwright).
 - Subir API e frontend também pelo docker compose, para executar tudo com um comando.

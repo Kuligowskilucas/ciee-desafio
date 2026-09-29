@@ -24,7 +24,6 @@ public class InterpretadorCurriculoTests
 
     [Theory]
     [InlineData("Mariana Alves Ferreira\nDesenvolvedora Back-end", "Mariana Alves Ferreira")]
-    [InlineData("MARIA DA SILVA\nmaria@exemplo.com", "MARIA DA SILVA")]
     [InlineData("CURRÍCULO\nMaria da Silva", "Maria da Silva")]
     [InlineData("Curriculum Vitae\n\nJoão Pedro dos Santos", "João Pedro dos Santos")]
     [InlineData("Currículo - Maria da Silva", "Maria da Silva")]
@@ -34,9 +33,32 @@ public class InterpretadorCurriculoTests
     [InlineData("Desenvolvedora Full Stack | Maria Souza", "Maria Souza")]
     [InlineData("Maria   da   Silva  |  (41) 99999-8888", "Maria da Silva")]
     [InlineData("Currículo\nObjetivo Profissional\nMaria Souza", "Maria Souza")]
-    public void Interpretar_NomeNoTopo_RetornaComoEstaNoDocumento(string texto, string esperado)
+    public void Interpretar_NomeNoTopo_EncontraONome(string texto, string esperado)
     {
         Assert.Equal(esperado, InterpretadorCurriculo.Interpretar(texto).NomeCompleto);
+    }
+
+    [Theory]
+    [InlineData("MARIA DA SILVA\nmaria@exemplo.com", "Maria da Silva")]
+    [InlineData("JOÃO PEDRO DOS SANTOS", "João Pedro dos Santos")]
+    [InlineData("ÉRICA ÁVILA E SOUZA", "Érica Ávila e Souza")]
+    [InlineData("ANA-MARIA D'ÁVILA", "Ana-Maria D'Ávila")]
+    [InlineData("JOÃO P. SANTOS", "João P. Santos")]
+    [InlineData("ANA DI PIETRO", "Ana di Pietro")]
+    [InlineData("LUCAS VAN HALEN", "Lucas van Halen")]
+    [InlineData("CURRÍCULO\nNome: MARIA DAS DORES", "Maria das Dores")]
+    public void Interpretar_NomeTodoEmMaiusculas_ConverteParaIniciaisMaiusculas(string texto, string esperado)
+    {
+        Assert.Equal(esperado, InterpretadorCurriculo.Interpretar(texto).NomeCompleto);
+    }
+
+    [Theory]
+    [InlineData("Maria DA Silva")]
+    [InlineData("JOÃO da Silva")]
+    [InlineData("Carlos McDonald Souza")]
+    public void Interpretar_NomeComMaiusculasEMinusculas_MantemComoEstaNoDocumento(string nome)
+    {
+        Assert.Equal(nome, InterpretadorCurriculo.Interpretar(nome).NomeCompleto);
     }
 
     [Theory]

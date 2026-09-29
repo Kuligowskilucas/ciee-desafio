@@ -57,13 +57,25 @@ public static partial class InterpretadorCurriculo
     [GeneratedRegex(@"^\p{Lu}(\p{L}*(['’-]\p{L}+)*|\.)$")]
     private static partial Regex PalavraDeNome();
 
-    private static string? EncontrarNome(string texto) =>
-        texto.Split('\n')
+    [GeneratedRegex(@"(?<=^|['’-])\p{L}")]
+    private static partial Regex InicioDeParteDoNome();
+
+    private static string? EncontrarNome(string texto)
+    {
+        var nome = texto.Split('\n')
             .Select(linha => Espacos().Replace(linha, " ").Trim())
             .Where(linha => linha.Length > 0)
             .Take(LinhasAnalisadasParaNome)
             .Select(PrimeiroTrechoForaDeCabecalho)
             .FirstOrDefault(TemFormatoDeNome);
+
+        return nome is not null && !nome.Any(char.IsLower) ? ComIniciaisMaiusculas(nome) : nome;
+    }
+
+    private static string ComIniciaisMaiusculas(string nome) =>
+        string.Join(' ', nome.Split(' ').Select(palavra => Conectivos.Contains(palavra)
+            ? palavra.ToLowerInvariant()
+            : InicioDeParteDoNome().Replace(palavra.ToLowerInvariant(), letra => letra.Value.ToUpperInvariant())));
 
     private static string? PrimeiroTrechoForaDeCabecalho(string linha) =>
         SeparadoresDeTrecho().Split(linha)
