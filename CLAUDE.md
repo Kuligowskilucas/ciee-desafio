@@ -20,6 +20,10 @@ Enunciado completo em `docs/DESAFIO.md`. Prazo: domingo, 04/10, 23h59.
   - Um currículo fictício em PDF para testar a importação.
   - Limitações da extração documentadas.
   - Histórico de commits que mostre a evolução do trabalho.
+  - Nomes do domínio em português (Candidato, NomeCompleto, Telefone, AreaInteresse);
+  sufixos e termos técnicos no padrão do .NET (Controller, DbContext, Service, Dto).
+  - Toda etapa com regra de negócio (validação, extração do PDF, endpoints) inclui testes.
+  - Ao fim de cada etapa, atualize as seções "Estrutura atual" e "Comandos" deste arquivo.
 
 ## Stack
 
@@ -33,10 +37,16 @@ Enunciado completo em `docs/DESAFIO.md`. Prazo: domingo, 04/10, 23h59.
 ```
 docker-compose.yml          SQL Server 2022 (container ciee-sqlserver, porta 1433)
 .env.example                variáveis do compose (SA_PASSWORD); o .env real não é versionado
+dotnet-tools.json           ferramentas locais do .NET (dotnet-ef)
 docs/DESAFIO.md             enunciado
+README.md                   como configurar, executar e testar do zero
+DESENVOLVIMENTO.md          relato do desenvolvimento (decisões técnicas e limitações mantidas aqui)
 backend/
   Candidatos.slnx           solution
-  src/Candidatos.Api/       Web API (ainda com o WeatherForecast do template)
+  src/Candidatos.Api/       Web API
+    Entities/               entidades do domínio (Candidato)
+    Data/                   CandidatosDbContext (tamanhos, índices, defaults via Fluent API)
+    Migrations/             migrations do EF Core (geradas, não editar à mão)
   tests/Candidatos.Api.Tests/  testes xUnit (referencia a API)
 ```
 
@@ -47,9 +57,17 @@ cp .env.example .env                        # depois definir SA_PASSWORD (senha 
 docker compose up -d                        # sobe o SQL Server
 docker compose ps                           # esperar status healthy
 
+dotnet tool restore                         # instala o dotnet-ef local
+dotnet user-secrets set "ConnectionStrings:Candidatos" \
+  "Server=localhost,1433;Database=Candidatos;User Id=sa;Password=<SA_PASSWORD>;TrustServerCertificate=True" \
+  --project backend/src/Candidatos.Api
+
 dotnet build backend/Candidatos.slnx
 dotnet test backend/Candidatos.slnx
-dotnet run --project backend/src/Candidatos.Api   # http://localhost:5290
+dotnet run --project backend/src/Candidatos.Api   # http://localhost:5290; em Development aplica as migrations
+
+dotnet ef migrations add <Nome> --project backend/src/Candidatos.Api
+dotnet ef database update --project backend/src/Candidatos.Api
 ```
 
 ## Regras de trabalho
@@ -66,3 +84,9 @@ dotnet run --project backend/src/Candidatos.Api   # http://localhost:5290
   Conventional Commits, em português.
 - Nunca coloque credenciais reais em arquivos versionados.
 - Ao terminar uma etapa, resuma o que mudou e como eu verifico que funciona.
+- Ao fim de cada etapa que mude pré-requisitos, configuração ou comandos, atualize o
+  README.md (tecnologias e versões, configuração do banco e da connection string,
+  criação da estrutura, execução e testes). Ele deve funcionar para quem clona do zero.
+- Ao fim de cada etapa, registre no DESENVOLVIMENTO.md, nas seções "Decisões técnicas"
+  e "Limitações", as decisões tomadas e seus motivos (1-3 linhas cada). Não escreva
+  as seções sobre organização do trabalho, uso de IA, verificação e tempo: essas são minhas.
