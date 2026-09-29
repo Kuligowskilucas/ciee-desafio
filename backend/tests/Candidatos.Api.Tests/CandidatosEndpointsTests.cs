@@ -122,6 +122,30 @@ public class CandidatosEndpointsTests(ApiFixture fixture)
         Assert.Equal(HttpStatusCode.Created, resposta.StatusCode);
     }
 
+    [Theory]
+    [InlineData("41999998888", "(41) 99999-8888")]
+    [InlineData("+55 41 3333-4444", "(41) 3333-4444")]
+    public async Task Cadastrar_ComTelefoneEmOutroFormato_SalvaNormalizado(string telefone, string esperado)
+    {
+        var resposta = await Cadastrar(new { nomeCompleto = "Maria da Silva", email = NovoEmail(), telefone });
+
+        Assert.Equal(HttpStatusCode.Created, resposta.StatusCode);
+        var candidato = await resposta.Content.ReadFromJsonAsync<CandidatoDto>();
+        Assert.Equal(esperado, candidato!.Telefone);
+    }
+
+    [Theory]
+    [InlineData("abc")]
+    [InlineData("99999-8888")]
+    [InlineData("(41) 1234-5678")]
+    public async Task Cadastrar_ComTelefoneInvalido_Retorna400(string telefone)
+    {
+        var resposta = await Cadastrar(new { nomeCompleto = "Maria da Silva", email = NovoEmail(), telefone });
+
+        var problema = await LerErrosDeValidacao(resposta);
+        Assert.Equal(["Informe um telefone com DDD, como (41) 99999-8888."], problema.Errors["Telefone"]);
+    }
+
     [Fact]
     public async Task Cadastrar_ComNomeAcimaDoTamanhoMaximo_Retorna400()
     {

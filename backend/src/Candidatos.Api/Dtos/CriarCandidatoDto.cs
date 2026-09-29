@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Candidatos.Api.Entities;
+using Candidatos.Api.Validacao;
 
 namespace Candidatos.Api.Dtos;
 
@@ -16,8 +17,8 @@ public class CriarCandidatoDto
     [RegularExpression(FormatoEmail, ErrorMessage = "Informe um e-mail válido, como nome@exemplo.com.")]
     public string? Email { get; init => field = Normalizar(value)?.ToLowerInvariant(); }
 
-    [StringLength(Candidato.TelefoneTamanhoMaximo, ErrorMessage = "O telefone deve ter no máximo {1} caracteres.")]
-    public string? Telefone { get; init => field = Normalizar(value); }
+    [RegularExpression(TelefoneBrasileiro.FormatoNormalizado, ErrorMessage = "Informe um telefone com DDD, como (41) 99999-8888.")]
+    public string? Telefone { get; init => field = NormalizarTelefone(value); }
 
     [StringLength(Candidato.AreaInteresseTamanhoMaximo, ErrorMessage = "A área de interesse deve ter no máximo {1} caracteres.")]
     public string? AreaInteresse { get; init => field = Normalizar(value); }
@@ -27,4 +28,7 @@ public class CriarCandidatoDto
 
     private static string? Normalizar(string? valor) =>
         string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
+
+    private static string? NormalizarTelefone(string? valor) =>
+        Normalizar(valor) is { } telefone ? TelefoneBrasileiro.Normalizar(telefone) ?? telefone : null;
 }

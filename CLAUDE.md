@@ -48,12 +48,14 @@ backend/
     Controllers/            CandidatosController (POST, GET lista, GET por id)
     Dtos/                   CriarCandidatoDto (validação + normalização), CandidatoDto, CandidatoResumoDto
     Entities/               entidades do domínio (Candidato, com constantes de tamanho máximo)
+    Validacao/              TelefoneBrasileiro (formato aceito e normalização para "(41) 99999-8888")
     Data/                   CandidatosDbContext (tamanhos, índices, defaults via Fluent API)
     Migrations/             migrations do EF Core (geradas, não editar à mão)
     Candidatos.Api.http     exemplos de requisições
   tests/Candidatos.Api.Tests/  testes xUnit de integração
     ApiFixture.cs           SQL Server via Testcontainers + WebApplicationFactory (collection fixture)
     CandidatosEndpointsTests.cs  cadastro, validação, 409, listagem, detalhe, 404
+    TelefoneBrasileiroTests.cs   unitários da normalização do telefone
     ErroNaoTratadoTests.cs  500 em ProblemDetails sem stack trace
 ```
 

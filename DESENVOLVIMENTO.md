@@ -23,6 +23,11 @@
   que só exige um `@` e aceita `a@b` ou `a@.com`. A mesma expressão serve no frontend.
 - **Normalização no próprio DTO:** trim em todos os textos, vazio vira `null` e e-mail em
   minúsculas. Fica no `init` das propriedades porque a validação roda antes da action.
+- **Telefone brasileiro com DDD, gravado sempre como `(41) 99999-8888` ou `(41) 3333-4444`.**
+  Aceita os formatos comuns (com ou sem +55, parênteses, espaço, hífen, ponto ou só dígitos) e
+  normaliza no `init`; o que não casa fica como veio e a validação recusa. Texto livre aceitava
+  "abc" e gravaria o mesmo número de formas diferentes. A regra fica em `TelefoneBrasileiro`,
+  para a extração do PDF usar a mesma.
 - **E-mail duplicado detectado pelo índice único (409), sem consulta prévia.** Uma consulta
   antes do insert não protege contra duas requisições simultâneas; o índice protege.
 - **Erros no formato ProblemDetails**, com títulos em português configurados num só lugar
@@ -46,6 +51,8 @@
 - A listagem não tem paginação: devolve todos os candidatos de uma vez.
 - A regex de e-mail aceita alguns endereços inválidos na parte local (`a..b@x.com`, `.a@x.com`)
   e rejeita formatos válidos mas raros (`user@localhost`, IP entre colchetes, parte local entre aspas).
+- O telefone só aceita números brasileiros com DDD: estrangeiros, prefixo de operadora
+  (`0xx41`), ramal e celular antigo de 8 dígitos são recusados.
 - JSON malformado ou com tipo errado (ex.: número no nome) retorna 400 com a mensagem padrão
   do .NET, em inglês.
 - A unicidade do e-mail sem diferenciar maiúsculas depende da collation case-insensitive do
